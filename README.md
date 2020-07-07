@@ -63,6 +63,132 @@ console.log(dereferenced);
 json-ref-escodegen generates valid JS code for each processed document.
 Each $ref is a getter pointing at external referenced module, or the same module if it's an internal ref.
 
+### Example output
+
+- `index.json`
+
+```json
+{
+  "allOf": [
+    {
+      "$ref": "./users.json#"
+    },
+    {
+      "$ref": "./user.json#/properties/name"
+    },
+    {
+      "$ref": "./user.json#/properties/age"
+    }
+  ]
+}
+```
+
+- `user.josn`
+
+```json
+{
+  "title": "User",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The user's full name."
+    },
+    "age": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 150
+    }
+  }
+}
+```
+
+- `users.json`
+
+```json
+{
+  "type": "array",
+  "items": {
+    "$ref": "./user.json#" 
+  },
+  "minItems": 1
+}
+```
+
+- `37043355.mjs` - this is the output for `index.json`
+
+```js
+import {default as _3899215387} from "./3899215387.mjs";
+import {default as _3073295516} from "./3073295516.mjs";
+const $ = {
+  "allOf": Object.defineProperties([{
+    "$ref": "./users.json#"
+  }, {
+    "$ref": "./user.json#/properties/name"
+  }, {
+    "$ref": "./user.json#/properties/age"
+  }], {
+    0: {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return _3899215387;
+      }
+    },
+    1: {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return _3073295516["properties"]["name"];
+      }
+    },
+    2: {
+      configurable: true,
+      enumerable: true,
+      get() {
+        return _3073295516["properties"]["age"];
+      }
+    }
+  })
+};
+export {$ as default};
+```
+
+- `3073295516.mjs` - `user.json`
+
+```js
+const $ = {
+  "title": "User",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The user's full name."
+    },
+    "age": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 150
+    }
+  }
+};
+export {$ as default};
+```
+
+- `3899215387.mjs` - `users.json`
+
+```js
+import {default as _3073295516} from "./3073295516.mjs";
+const $ = {
+  "type": "array",
+  get "items"() {
+    return _3073295516;
+  },
+  "minItems": 1
+};
+export {$ as default};
+```
+
 ### How do I serialize my crap back to other text format, such as JSON or YAML?
 
 It's as simple as importing the generated module and running `JSON.stringify` or YAML counterpart.
