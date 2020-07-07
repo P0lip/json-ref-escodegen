@@ -10,5 +10,7 @@ export default class Module {
     this.source = actualSource;
     this.id = String(fnv1a.bigInt(actualSource));
     context.moduleRegistry.set(actualSource, this);
+
+    this.$refs = new Set();
   }
 }

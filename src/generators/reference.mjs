@@ -30,6 +30,8 @@ export default function (obj, context) {
           context.dependencies.add(module);
           actualIdentifier = safeIdentifier(module.id);
         }
+
+        module.$refs.add(pointer);
       }
 
       const propertyPath = pointerToPath(pointer);

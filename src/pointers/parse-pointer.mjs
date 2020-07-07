@@ -1,5 +1,5 @@
 const result = {
-  pointer: '',
+  pointer: '#',
   source: '',
 };
 
@@ -11,7 +11,7 @@ export default function ($ref) {
   const index = $ref.indexOf('#');
   if (index === -1) {
     result.source = $ref;
-    result.pointer = '';
+    result.pointer = '#';
   } else if (index === 0) {
     result.source = '';
     result.pointer = $ref;
