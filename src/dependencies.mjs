@@ -1,5 +1,3 @@
-import Module from './module.mjs';
-
 export default class Dependencies {
   #childModules;
   #newModules;
@@ -11,7 +9,7 @@ export default class Dependencies {
     this.#newModules = new WeakSet();
   }
 
-  // todo: make it a private getter once node adds support for them
+  // todo: waiting for v8 8.4 to be included in Node.js
   get rootModules() {
     return this.root.getModules();
   }
@@ -28,7 +26,7 @@ export default class Dependencies {
     return this.#childModules.has(module);
   }
 
-  add(module) {
+  addModule(module) {
     if (this.#childModules.has(module)) return;
 
     if (!this.rootModules.has(module)) {
@@ -38,29 +36,21 @@ export default class Dependencies {
     this.#childModules.add(module);
 
     if (this.root !== this) {
-      this.root.add(module);
+      this.root.addModule(module);
     }
   }
 
-  getModuleForSource(source, context) {
-    return new Module(source, context);
-  }
+  addRuntimeModule(module) {
+    for (const childModule of this.#childModules) {
+      if (childModule.id === module.id) {
+        return;
+      }
+    }
 
-  getManifest() {
-    // stub
+    this.#childModules.add(module);
   }
 
   *[Symbol.iterator]() {
     yield* this.#childModules;
-  }
-
-  static fromManifest(list) {
-    const dependencies = new Dependencies(null, null);
-
-    for (const [, source] of list) {
-      dependencies.add(dependencies.getModuleForSource(source));
-    }
-
-    return dependencies;
   }
 }

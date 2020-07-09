@@ -1,4 +1,5 @@
 import { blockStatement, returnStatement } from '../builders.mjs';
+import { DefaultModule } from '../modules.mjs';
 import { parsePointer, pointerToPath } from '../pointers/index.mjs';
 import { MODULE_ROOT_IDENTIFIER } from './consts.mjs';
 import generateError from './error.mjs';
@@ -16,9 +17,9 @@ export default function (obj, context) {
       let actualIdentifier = MODULE_ROOT_IDENTIFIER;
 
       if (source !== '') {
-        const module = context.dependencies.getModuleForSource(
+        const module = DefaultModule.getFromRegistry(
           path.isAbsolute(source)
-            ? source
+            ? path.normalize(source)
             : path.join(
                 path.dirname(context.dependencies.parentModule.source),
                 source,
@@ -26,12 +27,15 @@ export default function (obj, context) {
           context,
         );
 
+        context.dependencies.addModule(module);
+
         if (module !== context.dependencies.parentModule) {
-          context.dependencies.add(module);
+          context.dependencies.addModule(module);
           actualIdentifier = safeIdentifier(module.id);
         }
 
-        module.$refs.add(pointer);
+        // todo: include parentModule
+        module.retainers.add(pointer);
       }
 
       const propertyPath = pointerToPath(pointer);

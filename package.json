@@ -30,8 +30,12 @@
   "typings": "./src/index.d.ts",
   "main": "./dist/index.cjs",
   "exports": {
-    "import": "./src/index.mjs",
-    "require": "./dist/index.cjs"
+    ".": {
+      "import": "./src/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./runtime/": "./src/runtime/"
+
   },
   "license": "Apache-2.0",
   "author": "P0lip",

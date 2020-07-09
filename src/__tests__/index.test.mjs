@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import generate, { Dependencies, ModuleRegistry } from '../index.mjs';
+import createFakeRequire from './__utils__/createFakeRequire.mjs';
 
 const { describe, it, beforeEach } = mocha;
 const { expect } = chai;
@@ -209,7 +210,7 @@ export {$ as default};
 
     expect(fs.write.getCall(0).args).to.deep.equal([
       './4112716709.mjs',
-      `import {default as _1021158662} from "./1021158662.mjs";
+      `import _1021158662 from "./1021158662.mjs";
 const $ = {
   get "a"() {
     return _1021158662;
@@ -290,8 +291,8 @@ export {$ as default};
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
-      './4112716709.js',
-      `const _1021158662 = require("./1021158662.js");
+      './4112716709.cjs',
+      `const _1021158662 = require("./1021158662.cjs");
 const $ = {
   get "a"() {
     return _1021158662;
@@ -305,7 +306,7 @@ module.exports = $
     ]);
 
     expect(fs.write.getCall(1).args).to.deep.equal([
-      './1021158662.js',
+      './1021158662.cjs',
       `const $ = {
   "foo": true
 };
@@ -336,19 +337,14 @@ module.exports = $
 
     expect(fs.write.getCall(0).args).to.deep.equal([
       './448841657.mjs',
-      `const $ = Object.defineProperties([{
+      `import _createArray from "json-ref-escodegen/runtime/create-array.mjs";
+const $ = _createArray([{
   "b": true
 }, {
   "$ref": "#/0"
-}], {
-  1: {
-    configurable: true,
-    enumerable: true,
-    get() {
-      return $["0"];
-    }
-  }
-});
+}], [[1, function () {
+  return $["0"];
+}]]);
 export {$ as default};
 `,
     ]);
@@ -418,25 +414,49 @@ export {$ as default};
       );
     });
 
-    it('root.json', async function () {
-      const source = path.join(__dirname, '__fixtures__/root.json');
-      const dist = path.join(__dirname, '__fixtures__/void');
-      const output = {};
+    describe('root.json', function () {
+      it('esm', async function () {
+        const source = path.join(__dirname, '__fixtures__/root.json');
+        const dist = path.join(__dirname, '__fixtures__/void');
+        const output = {};
 
-      await generate(source, {
-        module: 'esm',
-        fs: {
-          read: async src => JSON.parse(await fs.read(src, 'utf8')),
-          async write(target, content) {
-            output[path.join(dist, target)] = content;
+        await generate(source, {
+          module: 'esm',
+          fs: {
+            read: async src => JSON.parse(await fs.read(src, 'utf8')),
+            async write(target, content) {
+              output[path.join(dist, target)] = content;
+            },
           },
-        },
-        path,
-        dependencies: new Dependencies(),
-        moduleRegistry: new ModuleRegistry(),
+          path,
+          dependencies: new Dependencies(),
+          moduleRegistry: new ModuleRegistry(),
+        });
+
+        expect(output).to.matchSnapshot(this);
       });
 
-      expect(output).to.matchSnapshot(this);
+      it('actual stringified text', async function () {
+        const source = path.join(__dirname, '__fixtures__/root.json');
+        const output = {};
+
+        const { id } = await generate(source, {
+          module: 'cjs',
+          fs: {
+            read: async src => JSON.parse(await fs.read(src, 'utf8')),
+            async write(target, content) {
+              output[target] = content;
+            },
+          },
+          path,
+          dependencies: new Dependencies(),
+          moduleRegistry: new ModuleRegistry(),
+        });
+
+        const require = createFakeRequire(output);
+
+        expect(require(`./${id}.cjs`)).to.matchSnapshot(this);
+      });
     });
   });
 });

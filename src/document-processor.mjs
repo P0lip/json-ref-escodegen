@@ -15,14 +15,14 @@ import {
   safeIdentifier,
 } from './generators/index.mjs';
 import Dependencies from './dependencies.mjs';
-import Module from './module.mjs';
+import { DefaultModule } from './modules.mjs';
 
 export default async function processDocument(source, context) {
   const { fs } = context;
 
-  const parentModule = new Module(source, context);
+  const parentModule = DefaultModule.getFromRegistry(source, context);
   const dependencies = new Dependencies(context.dependencies, parentModule);
-  dependencies.add(parentModule);
+  dependencies.addModule(parentModule);
   context.dependencies = dependencies;
 
   const data = await fs.read(parentModule.source); // todo: on error export some deep proxy or what?
@@ -40,7 +40,7 @@ export default async function processDocument(source, context) {
       generateImport(
         context.module,
         safeIdentifier(childModule.id),
-        literal(sourceIdToModuleSource(context.module, childModule.id)),
+        literal(childModule.getPath(context.module)),
       ),
     );
 
@@ -51,7 +51,7 @@ export default async function processDocument(source, context) {
 
   promises.push(
     fs.write(
-      sourceIdToModuleSource(context.module, parentModule.id),
+      parentModule.getPath(context.module),
 
       astring.generate(
         program([
@@ -71,6 +71,3 @@ export default async function processDocument(source, context) {
 
   return parentModule;
 }
-
-const sourceIdToModuleSource = (module, sourceId) =>
-  `./${sourceId}.${module === 'esm' ? 'm' : ''}js`;

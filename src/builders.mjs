@@ -204,3 +204,10 @@ export function importSpecifier(local, imported) {
     imported,
   };
 }
+
+export function importDefaultSpecifier(local) {
+  return {
+    type: 'ImportDefaultSpecifier',
+    local,
+  };
+}

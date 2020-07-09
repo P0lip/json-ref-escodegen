@@ -2,13 +2,11 @@ import {
   arrayExpression,
   callExpression,
   literal,
-  property,
-  objectExpression,
-  identifier,
   functionExpression,
 } from '../builders.mjs';
+import RuntimeModule from '../modules.mjs';
 import isPrimitive from '../utils/is-primitive.mjs';
-import { DEFAULT_DESCRIPTORS, OBJECT_DEFINE_PROPERTIES } from './consts.mjs';
+import { CREATE_ARRAY, CREATE_ARRAY_ID } from './consts.mjs';
 import generateProperties from './properties.mjs';
 import generateReference from './reference.mjs';
 
@@ -37,26 +35,18 @@ export default function generateElements(arr, context) {
   }
 
   if ($refs.length > 0) {
-    return callExpression(OBJECT_DEFINE_PROPERTIES, [
+    context.dependencies.addRuntimeModule(
+      new RuntimeModule('create-array', CREATE_ARRAY_ID),
+    );
+
+    return callExpression(CREATE_ARRAY, [
       arrayExpression(elements),
-      objectExpression(
+      arrayExpression(
         $refs.map(i =>
-          property(
-            'init',
+          arrayExpression([
             literal(i),
-            objectExpression([
-              ...DEFAULT_DESCRIPTORS,
-              property(
-                'method',
-                identifier('get'), // todo: what about set so the value can be changed?
-                functionExpression(
-                  null,
-                  [],
-                  generateReference(arr[i], context),
-                ),
-              ),
-            ]),
-          ),
+            functionExpression(null, [], generateReference(arr[i], context)),
+          ]),
         ),
       ),
     ]);

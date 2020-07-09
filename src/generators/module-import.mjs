@@ -2,7 +2,7 @@ import {
   callExpression,
   identifier,
   importDeclaration,
-  importSpecifier,
+  importDefaultSpecifier,
   variableDeclaration,
   variableDeclarator,
 } from '../builders.mjs';
@@ -10,10 +10,7 @@ import {
 export default function (type, specifier, source) {
   switch (type) {
     case 'esm':
-      return importDeclaration(
-        [importSpecifier(specifier, identifier('default'))],
-        source,
-      );
+      return importDeclaration([importDefaultSpecifier(specifier)], source);
     case 'cjs':
       return variableDeclaration('const', [
         variableDeclarator(

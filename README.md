@@ -19,7 +19,7 @@ npm install json-ref-escodegen --save
 
 - generates JS code instead of object literal supposed to be eventually serialized back to JSON / YAML / any other text format
 - highly scalable - it's expected to work on projects rather than single files
-- very performant - one of the quickest (if not the quickest) $ref resolver
+- very performant - one of the quickest (if not the quickest) $ref resolver (despite the whole fairly expensive code generation process that takes place - will be even faster when there is plain resolving mode exposed)
 - excellent long-term caching possibilities - each $ref is as a separate module (file)
 - first-class support for all kinds of circularity
 - truly environment agnostic - does not depend on any fs module or browser global
