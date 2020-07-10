@@ -1,5 +1,5 @@
 import { literal, objectExpression, property } from '../builders.mjs';
-import traverse from '../utils/traverse.mjs';
+import { isLocalRef, hasRef } from '../pointers/index.mjs';
 import isPrimitive from '../utils/is-primitive.mjs';
 import generateElements from './elements.mjs';
 import generateGetter from './getter.mjs';
@@ -8,7 +8,9 @@ import generateReference from './reference.mjs';
 export default function generateProperties(obj, context) {
   const properties = [];
 
-  for (const key of traverse(obj)) {
+  const pos = context.traverse.enter();
+
+  for (const key of context.traverse.object(obj)) {
     const value = obj[key];
     const id = literal(key);
 
@@ -18,7 +20,10 @@ export default function generateProperties(obj, context) {
       properties.push(
         property('init', id, generateElements(value, context), true),
       );
-    } else if (!('$ref' in value)) {
+    } else if (
+      !hasRef(value) ||
+      (isLocalRef(value.$ref) && !context.transformInline(value.$ref))
+    ) {
       properties.push(
         property('init', id, generateProperties(value, context), true),
       );
@@ -26,6 +31,8 @@ export default function generateProperties(obj, context) {
       properties.push(generateGetter(id, generateReference(value, context)));
     }
   }
+
+  context.traverse.exit(pos);
 
   return objectExpression(properties);
 }

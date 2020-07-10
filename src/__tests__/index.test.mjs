@@ -5,8 +5,8 @@ import sinon from 'sinon';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import generate, { Dependencies, ModuleRegistry } from '../index.mjs';
-import createFakeRequire from './__utils__/createFakeRequire.mjs';
+import generate, { Dependencies, Traverse } from '../index.mjs';
+import createFakeRequire from '../runtime/load-module.mjs';
 
 const { describe, it, beforeEach } = mocha;
 const { expect } = chai;
@@ -41,8 +41,12 @@ describe('Codegen resolver', function () {
       module: 'esm',
       fs,
       dependencies: new Dependencies(),
-      moduleRegistry: new ModuleRegistry(),
       path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
@@ -81,8 +85,12 @@ export {$ as default};
       module: 'esm',
       fs,
       dependencies: new Dependencies(),
-      moduleRegistry: new ModuleRegistry(),
       path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
@@ -121,8 +129,12 @@ export {$ as default};
       module: 'esm',
       fs,
       dependencies: new Dependencies(),
-      moduleRegistry: new ModuleRegistry(),
       path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
@@ -159,8 +171,12 @@ export {$ as default};
       module: 'esm',
       fs,
       dependencies: new Dependencies(),
-      moduleRegistry: new ModuleRegistry(),
       path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
@@ -204,8 +220,12 @@ export {$ as default};
       module: 'esm',
       fs,
       dependencies: new Dependencies(),
-      moduleRegistry: new ModuleRegistry(),
       path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
@@ -247,8 +267,12 @@ export {$ as default};
       module: 'esm',
       fs,
       dependencies: new Dependencies(),
-      moduleRegistry: new ModuleRegistry(),
       path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
@@ -286,8 +310,12 @@ export {$ as default};
       module: 'cjs',
       fs,
       dependencies: new Dependencies(),
-      moduleRegistry: new ModuleRegistry(),
       path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
@@ -331,8 +359,12 @@ module.exports = $
       module: 'esm',
       fs,
       dependencies: new Dependencies(),
-      moduleRegistry: new ModuleRegistry(),
       path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
@@ -342,7 +374,7 @@ const $ = _createArray([{
   "b": true
 }, {
   "$ref": "#/0"
-}], [[1, function () {
+}], [["1", function () {
   return $["0"];
 }]]);
 export {$ as default};
@@ -361,8 +393,39 @@ export {$ as default};
       module: 'esm',
       fs,
       dependencies: new Dependencies(),
-      moduleRegistry: new ModuleRegistry(),
       path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
+    });
+
+    expect(fs.write.getCall(0).args).to.deep.equal([
+      './448841657.mjs',
+      `const $ = {};
+export {$ as default};
+`,
+    ]);
+  });
+
+  it('skips symbols', async () => {
+    const document = {
+      a: Symbol(''),
+    };
+
+    fs.read.withArgs('foo.json').resolves(document);
+
+    await generate('foo.json', {
+      module: 'esm',
+      fs,
+      dependencies: new Dependencies(),
+      path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
@@ -386,8 +449,12 @@ export {$ as default};
       module: 'esm',
       fs,
       dependencies: new Dependencies(),
-      moduleRegistry: new ModuleRegistry(),
       path,
+      traverse: new Traverse({
+        skipGetters: false,
+      }),
+      transformExternal: () => true,
+      transformInline: () => true,
     });
 
     expect(fs.write.getCall(0).args).to.deep.equal([
@@ -430,7 +497,11 @@ export {$ as default};
           },
           path,
           dependencies: new Dependencies(),
-          moduleRegistry: new ModuleRegistry(),
+          traverse: new Traverse({
+            skipGetters: false,
+          }),
+          transformExternal: () => true,
+          transformInline: () => true,
         });
 
         expect(output).to.matchSnapshot(this);
@@ -450,13 +521,110 @@ export {$ as default};
           },
           path,
           dependencies: new Dependencies(),
-          moduleRegistry: new ModuleRegistry(),
+          traverse: new Traverse({
+            skipGetters: false,
+          }),
+          transformExternal: () => true,
+          transformInline: () => true,
         });
 
         const require = createFakeRequire(output);
 
         expect(require(`./${id}.cjs`)).to.matchSnapshot(this);
       });
+    });
+  });
+
+  describe('selective resolving', () => {
+    it('preserves ignored inline $refs', async () => {
+      const document = {
+        a: {
+          $ref: '#/skip/me',
+        },
+        b: {
+          $ref: '#/b',
+        },
+        c: {
+          $ref: '#/skip/you',
+        },
+      };
+
+      fs.read.returns(document);
+
+      await generate('foo.json', {
+        module: 'esm',
+        fs,
+        dependencies: new Dependencies(),
+        path,
+        traverse: new Traverse({
+          skipGetters: false,
+        }),
+        transformExternal: () => true,
+        transformInline: pointer => !pointer.startsWith('#/skip/'),
+      });
+
+      expect(fs.write.getCall(0).args).to.deep.equal([
+        './448841657.mjs',
+        `const $ = {
+  "a": {
+    "$ref": "#/skip/me"
+  },
+  get "b"() {
+    return $["b"];
+  },
+  "c": {
+    "$ref": "#/skip/you"
+  }
+};
+export {$ as default};
+`,
+      ]);
+    });
+
+    it('treats external document as plain text to evaluate', async () => {
+      const cwd = '/home/baz/project';
+      const document = {
+        a: {
+          $ref: './foo.json#',
+        },
+      };
+
+      fs.read
+        .withArgs(path.join(cwd, 'bar.json'))
+        .resolves(document)
+        .withArgs(path.join(cwd, 'foo.json'))
+        .resolves(`{ foo: true }`);
+
+      await generate(path.join(cwd, 'bar.json'), {
+        module: 'esm',
+        fs,
+        dependencies: new Dependencies(),
+        path,
+        traverse: new Traverse({
+          skipGetters: false,
+        }),
+        transformExternal: source => source !== path.join(cwd, 'foo.json'),
+        transformInline: () => true,
+      });
+
+      expect(fs.write.getCall(0).args).to.deep.equal([
+        './4112716709.mjs',
+        `import _1021158662 from "./1021158662.mjs";
+const $ = {
+  get "a"() {
+    return _1021158662;
+  }
+};
+export {$ as default};
+`,
+      ]);
+
+      expect(fs.write.getCall(1).args).to.deep.equal([
+        './1021158662.mjs',
+        `const $ = Function("return ({ foo: true })")();
+export {$ as default};
+`,
+      ]);
     });
   });
 });

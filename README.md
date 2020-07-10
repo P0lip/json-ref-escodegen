@@ -33,7 +33,7 @@ npm install json-ref-escodegen --save
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import generate, { Dependencies, ModuleRegistry } from 'json-ref-escodegen';
+import generate, { Dependencies, Traverse } from 'json-ref-escodegen';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const source = path.join(__dirname, 'src/__fixtures__/root.json');
@@ -49,7 +49,11 @@ const module = await generate(
     },
     path,
     dependencies: new Dependencies(),
-    moduleRegistry: new ModuleRegistry(),
+    traverse: new Traverse({
+      skipGetters: false,
+    }),
+    transformExternal: (target) => true,
+    transformInternal: (pointer) => true,
   }
 );
 
@@ -109,7 +113,7 @@ Each $ref is a getter pointing at external referenced module, or the same module
 {
   "type": "array",
   "items": {
-    "$ref": "./user.json#" 
+    "$ref": "./user.json#"
   },
   "minItems": 1
 }

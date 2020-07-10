@@ -1,6 +1,6 @@
-import { blockStatement, returnStatement } from '../builders.mjs';
+import { blockStatement, literal, returnStatement } from '../builders.mjs';
 import { DefaultModule } from '../modules.mjs';
-import { parsePointer, pointerToPath } from '../pointers/index.mjs';
+import { parseRef, pointerToPath } from '../pointers/index.mjs';
 import { MODULE_ROOT_IDENTIFIER } from './consts.mjs';
 import generateError from './error.mjs';
 import generatePropertyPath from './property-path.mjs';
@@ -12,7 +12,7 @@ export default function (obj, context) {
   } else {
     const { path } = context;
     try {
-      const { pointer, source } = parsePointer(obj.$ref);
+      const { pointer, source } = parseRef(obj.$ref);
 
       let actualIdentifier = MODULE_ROOT_IDENTIFIER;
 
@@ -42,9 +42,11 @@ export default function (obj, context) {
 
       return blockStatement([
         returnStatement(
-          propertyPath === null
-            ? actualIdentifier
-            : generatePropertyPath(actualIdentifier, propertyPath),
+          context.transformInline(pointer)
+            ? propertyPath === null
+              ? actualIdentifier
+              : generatePropertyPath(actualIdentifier, propertyPath)
+            : literal(pointer),
         ),
       ]);
     } catch (ex) {

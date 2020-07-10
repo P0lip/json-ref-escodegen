@@ -10,6 +10,7 @@ import { MODULE_ROOT_IDENTIFIER } from './generators/consts.mjs';
 import {
   generateElements,
   generateExport,
+  generateIIFE,
   generateImport,
   generateProperties,
   safeIdentifier,
@@ -29,9 +30,11 @@ export default async function processDocument(source, context) {
   const imports = [];
   const promises = [];
 
-  const generatedTree = Array.isArray(data)
-    ? generateElements(data, context)
-    : generateProperties(data, context);
+  const generatedTree = context.transformExternal(parentModule.source)
+    ? Array.isArray(data)
+      ? generateElements(data, context)
+      : generateProperties(data, context)
+    : generateIIFE(String(data));
 
   for (const childModule of dependencies) {
     if (childModule === parentModule) continue;
