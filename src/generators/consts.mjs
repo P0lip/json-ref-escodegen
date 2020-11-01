@@ -1,7 +1,10 @@
 import { identifier } from '../builders.mjs';
-import safeIdentifier from './safe-identifier.mjs';
 
-export const MODULE_ROOT_IDENTIFIER = identifier('$');
+export const MODULE_ROOT_ID = '$';
+export const MODULE_ROOT = identifier(MODULE_ROOT_ID);
 
-export const CREATE_ARRAY_ID = 'createArray';
-export const CREATE_ARRAY = safeIdentifier(CREATE_ARRAY_ID);
+export const MODULE_ERRORS_ID = '$_errors';
+export const MODULE_ERRORS = identifier(MODULE_ERRORS_ID);
+
+export const MODULE_SOURCE_ID = '$_source';
+export const MODULE_SOURCE = identifier(MODULE_SOURCE_ID);

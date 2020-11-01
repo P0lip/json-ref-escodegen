@@ -17,6 +17,22 @@ export function literal(value) {
   };
 }
 
+export function templateLiteral(quasis, expressions) {
+  return {
+    type: 'TemplateLiteral',
+    quasis,
+    expressions,
+  };
+}
+
+export function templateElement(value, tail) {
+  return {
+    type: 'TemplateElement',
+    value,
+    tail,
+  };
+}
+
 export function identifier(name) {
   return {
     type: 'Identifier',
@@ -134,6 +150,17 @@ export function functionExpression(id, params, body, generator, async) {
   };
 }
 
+export function arrowFunctionExpression(id, params, body, generator, async) {
+  return {
+    type: 'ArrowFunctionExpression',
+    id,
+    params,
+    body,
+    generator,
+    async,
+  };
+}
+
 export function exportNamedDeclaration(declaration, specifiers, source) {
   return {
     type: 'ExportNamedDeclaration',
@@ -209,5 +236,21 @@ export function importDefaultSpecifier(local) {
   return {
     type: 'ImportDefaultSpecifier',
     local,
+  };
+}
+
+export function ifStatement(test, consequent, alternate) {
+  return {
+    type: 'IfStatement',
+    test,
+    consequent,
+    alternate,
+  };
+}
+
+export function objectPattern(properties) {
+  return {
+    type: 'ObjectPattern',
+    properties,
   };
 }

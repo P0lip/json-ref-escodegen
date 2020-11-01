@@ -1,3 +1,5 @@
+import { InvalidPointerError } from '../runtime/errors/pointers.mjs';
+
 const result = {
   pointer: '#',
   source: '',
@@ -5,7 +7,7 @@ const result = {
 
 export default function ($ref) {
   if ($ref.length === 0) {
-    throw new SyntaxError('Pointer cannot be empty');
+    throw new InvalidPointerError('Pointer cannot be empty');
   }
 
   const index = $ref.indexOf('#');
@@ -21,7 +23,7 @@ export default function ($ref) {
   }
 
   if (result.pointer.length > 1 && result.pointer[1] !== '/') {
-    throw new SyntaxError(
+    throw new InvalidPointerError(
       'Pointer pointing at other property than root needs to start with #/',
     );
   }

@@ -3,13 +3,15 @@ import {
   callExpression,
   literal,
   functionExpression,
+  identifier,
 } from '../builders.mjs';
-import RuntimeModule from '../modules.mjs';
 import { isLocalRef } from '../pointers/index.mjs';
+import createArray from '../runtime/utils/create-array.mjs';
 import isPrimitive from '../utils/is-primitive.mjs';
-import { CREATE_ARRAY, CREATE_ARRAY_ID } from './consts.mjs';
 import generateProperties from './properties.mjs';
 import generateReference from './reference.mjs';
+
+const CREATE_ARRAY = identifier(createArray.name);
 
 export default function generateElements(arr, context) {
   const elements = [];
@@ -39,14 +41,10 @@ export default function generateElements(arr, context) {
     }
   }
 
-  context.traverse.exit(pos);
-
   if ($refs !== void 0) {
-    context.dependencies.addRuntimeModule(
-      new RuntimeModule('create-array', CREATE_ARRAY_ID),
-    );
+    context.dependencies.addRuntimeDependency(createArray.name);
 
-    return callExpression(CREATE_ARRAY, [
+    const tree = callExpression(CREATE_ARRAY, [
       arrayExpression(elements),
       arrayExpression(
         $refs.map(i =>
@@ -57,7 +55,12 @@ export default function generateElements(arr, context) {
         ),
       ),
     ]);
+
+    context.traverse.exit(pos);
+    return tree;
   }
+
+  context.traverse.exit(pos);
 
   return arrayExpression(elements);
 }

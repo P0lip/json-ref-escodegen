@@ -1,16 +1,21 @@
 {
-  "parser": "babel-eslint",
+  "parser": "@babel/eslint-parser",
   "parserOptions": {
+    "ecmaVersion": 11,
     "sourceType": "module"
   },
   "env": {
-    "es6": true
+    "es6": true,
+    "shared-node-browser": true
+  },
+  "globals": {
+    "globalThis": true
   },
   "extends": ["eslint:recommended", "plugin:prettier/recommended"],
   "rules": {
     "func-names": "off",
     "no-param-reassign": "warn",
-    "global-require": "warn",
+    "global-require": "error",
     "sort-keys": "error",
     "no-continue": "off",
     "no-labels": "off",
@@ -28,7 +33,7 @@
   },
   "overrides": [
     {
-      "files": ["src/**/__tests__/*.test.mjs"],
+      "files": ["src/**/__tests__/*.test.{cjs,mjs}"],
       "extends": ["plugin:chai-expect/recommended"],
       "env": {
         "node": true
@@ -41,6 +46,12 @@
         "sort-keys": "off",
         "no-unused-expressions": 0,
         "chai-friendly/no-unused-expressions": 2
+      }
+    },
+    {
+      "files": ["src/**/__tests__/*.test.cjs"],
+      "rules": {
+        "global-require": "off"
       }
     }
   ]

@@ -4,48 +4,66 @@ import {
   variableDeclaration,
   variableDeclarator,
   program,
-  literal,
 } from './builders.mjs';
-import { MODULE_ROOT_IDENTIFIER } from './generators/consts.mjs';
+import { MODULE_ROOT, MODULE_ROOT_ID } from './generators/consts.mjs';
 import {
   generateElements,
   generateExport,
   generateIIFE,
-  generateImport,
+  generateDefaultImport,
   generateProperties,
-  safeIdentifier,
+  generateErrorModule,
+  generateMembersImport,
+  generateErrorCollector,
 } from './generators/index.mjs';
 import Dependencies from './dependencies.mjs';
-import { DefaultModule } from './modules.mjs';
+import { File } from './modules.mjs';
+import { WriteError } from './runtime/errors/fs.mjs';
 
 export default async function processDocument(source, context) {
   const { fs } = context;
 
-  const parentModule = DefaultModule.getFromRegistry(source, context);
+  const parentModule = File.getFromRegistry(source, context);
   const dependencies = new Dependencies(context.dependencies, parentModule);
   dependencies.addModule(parentModule);
   context.dependencies = dependencies;
 
-  const data = await fs.read(parentModule.source); // todo: on error export some deep proxy or what?
   const imports = [];
   const promises = [];
 
-  const generatedTree = context.transformExternal(parentModule.source)
-    ? Array.isArray(data)
-      ? generateElements(data, context)
-      : generateProperties(data, context)
-    : generateIIFE(String(data));
+  let generatedTree;
+  try {
+    const data = await fs.read(parentModule.source);
+
+    generatedTree =
+      data !== null && context.transformExternal(parentModule.source)
+        ? Array.isArray(data)
+          ? generateElements(data, context)
+          : generateProperties(data, context)
+        : generateIIFE(String(data));
+  } catch (ex) {
+    generatedTree = generateErrorModule(
+      ex?.message ?? 'Unknown read error',
+      context,
+    );
+  }
+
+  const errors = generateErrorCollector(source, parentModule.getters, context);
 
   for (const childModule of dependencies) {
     if (childModule === parentModule) continue;
 
-    imports.push(
-      generateImport(
-        context.module,
-        safeIdentifier(childModule.id),
-        literal(childModule.getPath(context.module)),
-      ),
-    );
+    const source = childModule.getPath(context.module);
+
+    if ('specifier' in childModule) {
+      imports.push(
+        generateDefaultImport(context.module, childModule.id, source),
+      );
+    } else if ('specifiers' in childModule) {
+      imports.push(
+        generateMembersImport(context.module, childModule.specifiers, source),
+      );
+    }
 
     if (dependencies.isNew(childModule)) {
       promises.push(processDocument(childModule.source, { ...context }));
@@ -53,21 +71,36 @@ export default async function processDocument(source, context) {
   }
 
   promises.push(
-    fs.write(
-      parentModule.getPath(context.module),
+    fs
+      .write(
+        parentModule.getPath(context.module),
 
-      astring.generate(
-        program([
-          ...imports,
+        astring.generate(
+          program([
+            ...imports,
 
-          variableDeclaration('const', [
-            variableDeclarator(MODULE_ROOT_IDENTIFIER, generatedTree),
+            variableDeclaration('const', [
+              variableDeclarator(MODULE_ROOT, generatedTree),
+            ]),
+
+            generateExport(context.module, MODULE_ROOT_ID),
+
+            ...errors,
           ]),
+        ),
+      )
+      .catch(ex => {
+        if (
+          typeof globalThis.process?.exit === 'function' &&
+          globalThis.process.exit.length === 1
+        ) {
+          console.error(new WriteError(ex?.message ?? '', source));
+          return void globalThis.process.exit(1);
+        }
 
-          generateExport(context.module, MODULE_ROOT_IDENTIFIER),
-        ]),
-      ),
-    ),
+        // we could actually catch it, but let's move the burden of that error to consumer
+        throw new WriteError(ex?.message ?? '', source);
+      }),
   );
 
   await Promise.allSettled(promises);

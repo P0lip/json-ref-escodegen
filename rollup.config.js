@@ -1,18 +1,22 @@
 import * as fs from 'fs';
 import { extname, basename } from 'path';
+import babel from '@rollup/plugin-babel';
 
 import pkg from './package.json';
 
 export default [
   {
+    acorn: {
+      ecmaVersion: 'latest',
+    },
     external: Object.keys(pkg.dependencies),
     input: './src/index.mjs',
     output: {
       exports: 'named',
       file: './dist/index.cjs',
       format: 'cjs',
-      name: pkg.name,
     },
+    plugins: [babel({ babelHelpers: 'inline' })],
   },
   ...fs
     .readdirSync('./src/runtime')
@@ -20,9 +24,10 @@ export default [
     .map(filepath => ({
       input: `./src/runtime/${filepath}`,
       output: {
-        exports: 'default',
-        file: `./src/runtime/${basename(filepath, '.mjs')}.cjs`,
+        exports: 'auto',
+        file: `./dist/runtime/${basename(filepath, '.mjs')}.cjs`,
         format: 'cjs',
       },
+      plugins: [babel({ babelHelpers: 'inline' })],
     })),
 ];

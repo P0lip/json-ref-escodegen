@@ -1,7 +1,7 @@
-import isGetter from '../utils/is-getter.mjs';
-import { pathToPointer } from '../pointers/index.mjs';
+import isGetter from '../../utils/is-getter.mjs';
+import { pathToPointer } from '../../pointers/index.mjs';
 
-const CONTEXT_KEY = Symbol.for('json-ref-escodegen-safe-stringify/c');
+const CONTEXT_KEY = Symbol.for('json-ref-escodegen/safe-stringify');
 
 export default function (document) {
   const context = {

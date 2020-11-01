@@ -1,9 +1,8 @@
-import createArray from './create-array.mjs';
+import * as runtime from './index.mjs';
 
 export default function loadModule(availableModules) {
   const evaluatedModules = {
-    'json-ref-escodegen/runtime/create-array.cjs': createArray,
-    'json-ref-escodegen/runtime/load-module.cjs': loadModule,
+    'json-ref-escodegen/runtime/index.cjs': runtime,
   };
 
   return function require(path) {

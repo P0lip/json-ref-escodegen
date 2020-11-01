@@ -4,7 +4,8 @@ import ModuleRegistry from './module-registry.mjs';
 export default async function (schema, context) {
   const internalContext = {
     ...context,
-    moduleRegistry: new ModuleRegistry(), // todo: get rid of it
+    // buildingCache: new Map(), // todo: try to use it as much as possible when constructing new crap
+    moduleRegistry: new ModuleRegistry(), // todo: get rid of it,
   };
 
   return await processDocument(schema, internalContext);

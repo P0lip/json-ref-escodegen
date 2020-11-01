@@ -19,7 +19,7 @@ export type GenerateOptions = {
   },
   transformExternal(source): boolean;
   transformInline(pointer): boolean;
-  dependencies: Dependencies;
+  readonly dependencies: Dependencies;
 }
 
 export default function(source: string, opts: GenerateOptions): DefaultModule;

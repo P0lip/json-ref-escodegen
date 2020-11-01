@@ -1,6 +1,9 @@
+import { RuntimeChunk } from './modules.mjs';
+
 export default class Dependencies {
   #childModules;
   #newModules;
+  #runtimeChunk = new RuntimeChunk();
 
   constructor(parent = null, parentModule = null) {
     this.root = parent === null ? this : parent.root;
@@ -9,7 +12,11 @@ export default class Dependencies {
     this.#newModules = new WeakSet();
   }
 
-  // todo: waiting for v8 8.4 to be included in Node.js
+  get size() {
+    return this.#childModules.size;
+  }
+
+  // todo: waiting for proper Rollup.js support (acorn)
   get rootModules() {
     return this.root.getModules();
   }
@@ -27,7 +34,7 @@ export default class Dependencies {
   }
 
   addModule(module) {
-    if (this.#childModules.has(module)) return;
+    if (this.#childModules.has(module)) return module;
 
     if (!this.rootModules.has(module)) {
       this.#newModules.add(module);
@@ -38,19 +45,16 @@ export default class Dependencies {
     if (this.root !== this) {
       this.root.addModule(module);
     }
+
+    return module;
   }
 
-  addRuntimeModule(module) {
-    for (const childModule of this.#childModules) {
-      if (childModule.id === module.id) {
-        return;
-      }
-    }
-
-    this.#childModules.add(module);
+  addRuntimeDependency(member) {
+    this.#runtimeChunk.addSpecifier(member);
   }
 
   *[Symbol.iterator]() {
+    yield this.#runtimeChunk;
     yield* this.#childModules;
   }
 }

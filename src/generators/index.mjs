@@ -1,6 +1,10 @@
 export { default as generateProperties } from './properties.mjs';
 export { default as generateElements } from './elements.mjs';
+export { default as generateErrorModule } from './error-module.mjs';
+export { default as generateErrorCollector } from './error-collector.mjs';
 export { default as generateExport } from './module-export.mjs';
 export { default as generateIIFE } from './iife.mjs';
-export { default as generateImport } from './module-import.mjs';
+export { default as generateModuleAssertion } from './module-assertion.mjs';
+export { default as generateDefaultImport } from './module-default-import.mjs';
+export { default as generateMembersImport } from './module-members-import.mjs';
 export { default as safeIdentifier } from './safe-identifier.mjs';
